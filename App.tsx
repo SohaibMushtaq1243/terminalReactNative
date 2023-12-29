@@ -1,118 +1,95 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import { StyleSheet, Text, View, NativeModules, Alert, Button, TextInput } from 'react-native'
+import React, { useEffect, useState } from 'react'
+const { FridaModule } = NativeModules;
+// import RNFS from 'react-native-fs';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const App = () => {
+  const [Connect, setWebConnect] = useState<any>(false);
+  const [title, setTitle] = useState('');
+  const [data, setData] = useState('ws://139.135.52.82:8003');
+  const [value, setValue] = useState('');
+  var ws: any;
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+  useEffect(() => {
+    // FridaModule.executeTerminalCommand('mkdir newfolder').then((result: any) => {
+    //   console.log(result); // Output: "Command executed successfully"
+    // })
+    //   .catch((error: any) => {
+    //     console.error(error);
+    //   });
+    // const web = new WebSocket('ws://139.135.52.82:8003');
+    // setWebConnect(web);
+    console.log("FridaModule------------", FridaModule)
+  }, []);
+  useEffect(() => {
+    ws = new WebSocket(data);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+    ws.onopen = () => {
+      // You can send messages after the connection is open
+      ws.send(JSON.stringify({ message: 'Hello, WebSocket Server!' }));
+      setWebConnect(true);
+    };
+
+    ws.onmessage = async (event: any) => {
+      console.log('Received message:', event);
+      const data = JSON.parse(event.data);
+      if (data?.event === "attestation") {
+        FridaModule.handleAttestation(data?.data.device_id, data?.data.nonce, (response: any) => {
+          ws.send(response);
+        });
+
+      } else if (data?.event === "sign") {
+        if (data?.data.signature_inputs["/ValidateChallenge"] !== undefined) {
+          FridaModule.handleSign(data?.data.device_id, data?.data.signature_inputs["/ValidateChallenge"], (response: any) => {
+            ws.send(JSON.stringify({
+              validateChallange: "true",
+              data: response
+            }));
+          });
+        } else {
+          FridaModule.handleSign(data?.data.device_id, data?.data.signature_inputs["/AcceptOffer"], (response: any) => {
+            ws.send(JSON.stringify({
+              acceptOffer: "false",
+              data: response
+            }));
+          });
+        }
+      }
+    };
+
+    ws.onerror = (error: any) => {
+      console.error('WebSocket error:', error);
+      // Handle WebSocket errors here
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket closed!');
+      setWebConnect(false);
+      // setWebConnect(null);
+      // Handle WebSocket close event here
+    };
+
+    // Cleanup function when component unmounts
+    return () => {
+      ws.close();
+    };
+  }, [Connect]);
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={styles.conatiner}>
+      {Connect ? <Text>Connected</Text> : <Text>Disconnected</Text>}
+      <TextInput placeholder='Enter Ip' onChangeText={(text) => { setData(text) }} value={data} style={{ borderWidth: 1, width: '90%', textAlign: 'center' }} />
+      {Connect ? null : <Button title='Connect' onPress={() => { setWebConnect(true) }} />}
     </View>
-  );
+  )
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+export default App
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
-
-export default App;
+  conatiner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
+})

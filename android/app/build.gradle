@@ -89,6 +89,12 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file('app.keystore')
+            storePassword 'your_key_store_password'
+            keyAlias 'your_key_alias'
+            keyPassword 'your_key_store_password'
+        }
     }
     buildTypes {
         debug {
@@ -102,12 +108,52 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+    packagingOptions {
+//        exclude("META-INF/DEPENDENCIES")
+        exclude("META-INF/LICENSE")
+        exclude("META-INF/LICENSE.txt")
+        exclude("META-INF/license.txt")
+        exclude("META-INF/NOTICE")
+        exclude("META-INF/NOTICE.txt")
+        exclude("META-INF/notice.txt")
+        exclude("META-INF/ASL2.0")
+        // exclude("META-INF/*.kotlin_module")
+        exclude("META-INF/INDEX.LIST")
+        exclude("META-INF/io.netty.versions.properties")
+    }
 }
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
     implementation("com.facebook.react:flipper-integration")
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.10.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("com.google.code.gson:gson:2.10.1")
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+    String ktorVersion = "2.3.5"
+    implementation("io.ktor:ktor:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-websockets:$ktorVersion")
+    implementation("io.ktor:ktor-server-websockets:$ktorVersion")
+    // Ktor client for Android
+    implementation("io.ktor:ktor-client-android:$ktorVersion")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
+    // For WebSocket support
+    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
+    testImplementation("io.ktor:ktor-websockets:$ktorVersion")
+    testImplementation("io.ktor:ktor-client-websockets:$ktorVersion")
+    testImplementation("io.ktor:ktor-client-cio:$ktorVersion")
+    testImplementation("io.ktor:ktor-client-okhttp:$ktorVersion")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
